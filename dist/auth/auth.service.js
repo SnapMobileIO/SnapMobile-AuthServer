@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.setUser = setUser;
 exports.isAuthenticated = isAuthenticated;
 exports.canAuthenticate = canAuthenticate;
 exports.hasRole = hasRole;
@@ -25,14 +26,18 @@ var _composableMiddleware = require('composable-middleware');
 
 var _composableMiddleware2 = _interopRequireDefault(_composableMiddleware);
 
-var _user = require('../user/user.model');
-
-var _user2 = _interopRequireDefault(_user);
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+//import User from '../user/user.model';
 
 // TODO: Move these to config
 var validateJwt = (0, _expressJwt2.default)({ secret: process.env.SESSION_SECRET });
+
+var User;
+
+function setUser(_user) {
+  User = _user;
+}
 
 /**
  * Middleware attaches the user object to the request if authenticated
@@ -64,7 +69,7 @@ function isAuthenticated() {
     }
 
     // Attach user to request
-    _user2.default.findById(req.user._id).then(function (user) {
+    User.findById(req.user._id).then(function (user) {
       if (!user) {
         return res.status(401).end();
       }

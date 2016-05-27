@@ -4,10 +4,16 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import expressJwt from 'express-jwt';
 import compose from 'composable-middleware';
-import User from '../user/user.model';
+//import User from '../user/user.model';
 
 // TODO: Move these to config
 const validateJwt = expressJwt({ secret: process.env.SESSION_SECRET });
+
+var User;
+
+export function setUser(_user) {
+  User = _user;
+}
 
 /**
  * Middleware attaches the user object to the request if authenticated

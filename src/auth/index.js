@@ -10,6 +10,7 @@ router.use('/login', local.router);
 
 module.exports = {
 	router: router,
+	authService: local.authService,
 	setUser: function(User) {
 		local.setUser(User);
 	}

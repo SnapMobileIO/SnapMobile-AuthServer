@@ -6,8 +6,6 @@ var _passport = require('passport');
 
 var _passport2 = _interopRequireDefault(_passport);
 
-var _auth = require('../auth.service');
-
 var _passport3 = require('./passport');
 
 var localPassport = _interopRequireWildcard(_passport3);
@@ -16,11 +14,17 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+//import auth from '../auth.service';
+var auth = require('../auth.service');
+
+
 var router = new _express.Router();
 
 module.exports = {
   router: router,
+  authService: auth,
   setUser: function setUser(User) {
+    auth.setUser(User);
     localPassport.setup(User);
     router.post('/', function (req, res, next) {
       _passport2.default.authenticate('local', function (err, user, info) {
@@ -33,7 +37,7 @@ module.exports = {
           return res.status(404).json({ message: 'Something went wrong, please try again.' });
         }
 
-        var token = (0, _auth.signToken)(user._id);
+        var token = auth.signToken(user._id);
         res.json({ token: token });
       })(req, res, next);
     });

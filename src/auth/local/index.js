@@ -2,14 +2,17 @@
 
 import { Router } from 'express';
 import passport from 'passport';
-import { signToken } from '../auth.service';
+//import auth from '../auth.service';
+var auth = require('../auth.service');
 import * as localPassport from './passport';
 
 const router = new Router();
 
 module.exports = {
   router: router,
+  authService: auth,
   setUser: function(User) {
+    auth.setUser(User)
     localPassport.setup(User);
     router.post('/', function(req, res, next) {
       passport.authenticate('local', function(err, user, info) {
@@ -22,7 +25,7 @@ module.exports = {
           return res.status(404).json({ message: 'Something went wrong, please try again.' });
         }
 
-        let token = signToken(user._id);
+        let token = auth.signToken(user._id);
         res.json({ token });
       })(req, res, next);
     });
