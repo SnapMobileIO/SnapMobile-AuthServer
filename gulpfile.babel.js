@@ -22,7 +22,7 @@ function handleError(error) {
 gulp.task('babel', function() {
   return gulp.src(['./src/auth/**/*.js', './src/auth/*', './src/auth/local/*'])
     .pipe(babel({ presets: ['es2015'] }))
-    .pipe(gulp.dest('./'))
+    .pipe(gulp.dest('./dist/auth'))
     .on('error', handleError);
 });
 
@@ -142,3 +142,4 @@ gulp.task('test', ['set-test-node-env', 'mocha']);
 gulp.task('default', ['watch']);
 gulp.task('dev', ['fonts', 'watch', 'start']);
 gulp.task('build', ['browserify', 'fonts', 'sass', 'babel', 'client-dist', 'server-html']);
+gulp.task('dist', ['babel']);

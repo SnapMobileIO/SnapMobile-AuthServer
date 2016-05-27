@@ -1,8 +1,8 @@
 'use strict';
 
-import { Router } from 'express';
+var _express = require('express');
 
-const router = new Router();
+var router = new _express.Router();
 
 var local = require('./local');
 
@@ -10,7 +10,7 @@ router.use('/login', local.router);
 
 module.exports = {
 	router: router,
-	setUser: function(User) {
+	setUser: function setUser(User) {
 		local.setUser(User);
 	}
 };

@@ -8,10 +8,6 @@ var _passport2 = _interopRequireDefault(_passport);
 
 var _auth = require('../auth.service');
 
-var _user = require('../../user/user.model');
-
-var _user2 = _interopRequireDefault(_user);
-
 var _passport3 = require('./passport');
 
 var localPassport = _interopRequireWildcard(_passport3);
@@ -22,22 +18,24 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var router = new _express.Router();
 
-localPassport.setup(_user2.default);
+module.exports = {
+  router: router,
+  setUser: function setUser(User) {
+    localPassport.setup(User);
+    router.post('/', function (req, res, next) {
+      _passport2.default.authenticate('local', function (err, user, info) {
+        var error = err || info;
+        if (error) {
+          return res.status(422).json(error);
+        }
 
-router.post('/', function (req, res, next) {
-  _passport2.default.authenticate('local', function (err, user, info) {
-    var error = err || info;
-    if (error) {
-      return res.status(422).json(error);
-    }
+        if (!user) {
+          return res.status(404).json({ message: 'Something went wrong, please try again.' });
+        }
 
-    if (!user) {
-      return res.status(404).json({ message: 'Something went wrong, please try again.' });
-    }
-
-    var token = (0, _auth.signToken)(user._id);
-    res.json({ token: token });
-  })(req, res, next);
-});
-
-module.exports = router;
+        var token = (0, _auth.signToken)(user._id);
+        res.json({ token: token });
+      })(req, res, next);
+    });
+  }
+};

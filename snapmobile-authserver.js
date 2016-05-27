@@ -1,6 +1,6 @@
 "use strict";
 
-require('./auth');
+require('./dist/auth');
 
 module.exports = {
 
