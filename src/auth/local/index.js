@@ -2,9 +2,9 @@
 
 import { Router } from 'express';
 import passport from 'passport';
-//import auth from '../auth.service';
-var auth = require('../auth.service');
 import * as localPassport from './passport';
+
+var auth = require('../auth.service');
 
 const router = new Router();
 
@@ -29,6 +29,5 @@ module.exports = {
         res.json({ token });
       })(req, res, next);
     });
-
   }
 };

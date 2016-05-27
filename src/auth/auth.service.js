@@ -4,7 +4,6 @@ import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import expressJwt from 'express-jwt';
 import compose from 'composable-middleware';
-//import User from '../user/user.model';
 
 // TODO: Move these to config
 const validateJwt = expressJwt({ secret: process.env.SESSION_SECRET });

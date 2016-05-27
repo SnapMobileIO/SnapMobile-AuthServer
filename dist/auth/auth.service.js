@@ -28,8 +28,6 @@ var _composableMiddleware2 = _interopRequireDefault(_composableMiddleware);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-//import User from '../user/user.model';
-
 // TODO: Move these to config
 var validateJwt = (0, _expressJwt2.default)({ secret: process.env.SESSION_SECRET });
 
