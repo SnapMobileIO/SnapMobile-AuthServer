@@ -33,6 +33,10 @@ var validateJwt = (0, _expressJwt2.default)({ secret: process.env.SESSION_SECRET
 
 var User;
 
+/**
+ * Sets the User of Auth and its dependencies for reference
+ * @param {User} _user An instance of the User class
+ */
 function setUser(_user) {
   User = _user;
 }

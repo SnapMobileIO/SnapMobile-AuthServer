@@ -18,26 +18,30 @@ var auth = require('../auth.service');
 
 var router = new _express.Router();
 
-module.exports = {
-  router: router,
-  authService: auth,
-  setUser: function setUser(User) {
-    auth.setUser(User);
-    localPassport.setup(User);
-    router.post('/', function (req, res, next) {
-      _passport2.default.authenticate('local', function (err, user, info) {
-        var error = err || info;
-        if (error) {
-          return res.status(422).json(error);
-        }
+/**
+ * Sets the User of Auth and its dependencies for reference
+ * @param {User} _user An instance of the User class
+ */
+function setUser(_user) {
+  auth.setUser(_user);
+  localPassport.setup(_user);
+  router.post('/', function (req, res, next) {
+    _passport2.default.authenticate('local', function (err, user, info) {
+      var error = err || info;
+      if (error) {
+        return res.status(422).json(error);
+      }
 
-        if (!user) {
-          return res.status(404).json({ message: 'Something went wrong, please try again.' });
-        }
+      if (!user) {
+        return res.status(404).json({ message: 'Something went wrong, please try again.' });
+      }
 
-        var token = auth.signToken(user._id);
-        res.json({ token: token });
-      })(req, res, next);
-    });
-  }
-};
+      var token = auth.signToken(user._id);
+      res.json({ token: token });
+    })(req, res, next);
+  });
+}
+
+module.exports.authService = local.authService;
+module.exports.router = router;
+module.exports.setUser = setUser;
