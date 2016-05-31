@@ -8,10 +8,10 @@ var local = require('./local');
 
 router.use('/login', local.router);
 
-module.exports = {
-	router: router,
-	authService: local.authService,
-	setUser: function(User) {
-		local.setUser(User);
-	}
-};
+function setUser(_user) {
+	local.setUser(_user);
+}
+
+module.exports.authService = local.authService;
+module.exports.router = router;
+module.exports.setUser = setUser;
