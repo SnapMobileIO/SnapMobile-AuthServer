@@ -12,7 +12,7 @@ module.exports = {
   router: router,
   authService: auth,
   setUser: function(User) {
-    auth.setUser(User)
+    auth.setUser(User);
     localPassport.setup(User);
     router.post('/', function(req, res, next) {
       passport.authenticate('local', function(err, user, info) {
