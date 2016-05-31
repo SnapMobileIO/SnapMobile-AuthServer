@@ -32,6 +32,6 @@ function setUser(_user) {
   });
 }
 
-module.exports.authService = local.authService;
+module.exports.authService = auth;
 module.exports.router = router;
 module.exports.setUser = setUser;
