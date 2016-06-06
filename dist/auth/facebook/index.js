@@ -2,6 +2,10 @@
 
 var _express = require('express');
 
+var _fbgraph = require('fbgraph');
+
+var _fbgraph2 = _interopRequireDefault(_fbgraph);
+
 var _passport = require('passport');
 
 var _passport2 = _interopRequireDefault(_passport);
@@ -9,10 +13,6 @@ var _passport2 = _interopRequireDefault(_passport);
 var _passport3 = require('./passport');
 
 var facebookPassport = _interopRequireWildcard(_passport3);
-
-var _fbgraph = require('fbgraph');
-
-var _fbgraph2 = _interopRequireDefault(_fbgraph);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -28,6 +28,7 @@ var router = new _express.Router();
  */
 function setUser(_user) {
   auth.setUser(_user);
+
   facebookPassport.setup(_user, auth);
 
   router.get('/', _passport2.default.authenticate('facebook', { scope: 'email' }));
@@ -47,9 +48,48 @@ function setUser(_user) {
   });
 
   router.post('/', function (req, res, next) {
-    var fields = [''];
-    _fbgraph2.default.get('me?fields=access_token=' + req.body.accessToken, function (err, res) {
-      console.log(res); // { id: '4', name: 'Mark Zuckerberg'... }
+    var fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
+    _fbgraph2.default.get('me?fields=' + fields.join() + '&access_token=' + req.body.accessToken, function (err, profile) {
+      _user.findOne({ email: profile.email.toLowerCase() }).then(function (user) {
+        if (!user) {
+          (function () {
+            // not registered
+            //generate a random password for using Facebook login
+            var passwordCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            var passwordLength = 20;
+            var randomPassword = Array(passwordLength).join().split(',').map(function () {
+              return passwordCharacters.charAt(Math.floor(Math.random() * passwordCharacters.length));
+            }).join('');
+            _user.create({
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              email: profile.email.toLowerCase(),
+              facebookID: profile.id,
+              password: randomPassword,
+              provider: 'facebook',
+              facebookAccessToken: req.body.accessToken,
+              avatar: profile.picture.data.url
+            }).then(function (result) {
+              result = result.toObject();
+              var token = auth.signToken(result._id);
+              res.json({ token: token });
+            }).catch(function (err) {
+              console.log(err);
+              res.status(400).json({ message: 'Could not create user, please try again.' });
+            });
+          })();
+        } else {
+          // is registered
+          user.facebookID = profile.id;
+          user.facebookAccessToken = req.body.accessToken;
+          user.save();
+          var token = auth.signToken(user._id);
+          res.json({ token: token });
+        }
+      }).catch(function (err) {
+        console.log(err);
+        res.status(400).json({ message: 'Something went wrong, please try again.' });
+      });
     });
   });
 }
