@@ -56,7 +56,7 @@ function setUser(_user) {
                 password: randomPassword,
                 provider: 'facebook',
                 facebookAccessToken: req.body.accessToken,
-                avatar: profile.picture.data.url
+                avatar: { url: profile.picture.data.url, hostedType: 'external' }
               }).then(result => {
                 result = result.toObject();
                 let token = auth.signToken(result._id);
