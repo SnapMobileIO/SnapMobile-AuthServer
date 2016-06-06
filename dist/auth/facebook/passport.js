@@ -22,23 +22,32 @@ function setup(User, Auth) {
   }, function (accessToken, refreshToken, profile, done) {
     User.findOne({ email: profile.emails[0].value.toLowerCase() }).then(function (user) {
       if (!user) {
-        // not registered
-        User.create({
-          firstName: profile.name.givenName,
-          lastName: profile.name.familyName,
-          email: profile.emails[0].value.toLowerCase(),
-          facebookID: profile.id,
-          password: 'facebook',
-          provider: 'facebook',
-          facebookAccessToken: accessToken,
-          facebookRefreshToken: refreshToken
-        }).then(function (result) {
-          result = result.toObject();
-          result.token = Auth.signToken(result._id);
-          return done(false, result);
-        }).catch(function (err) {
-          return done(err);
-        });
+        (function () {
+          // not registered
+
+          //generate a random password for using Facebook login
+          var passwordCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          var passwordLength = 20;
+          var randomPassword = Array(passwordLength).join().split(',').map(function () {
+            return passwordCharacters.charAt(Math.floor(Math.random() * passwordCharacters.length));
+          }).join('');
+          User.create({
+            firstName: profile.name.givenName,
+            lastName: profile.name.familyName,
+            email: profile.emails[0].value.toLowerCase(),
+            facebookID: profile.id,
+            password: randomPassword,
+            provider: 'facebook',
+            facebookAccessToken: accessToken,
+            facebookRefreshToken: refreshToken
+          }).then(function (result) {
+            result = result.toObject();
+            result.token = Auth.signToken(result._id);
+            return done(false, result);
+          }).catch(function (err) {
+            return done(err);
+          });
+        })();
       } else {
         // is registered
         user.facebookID = profile.id;
