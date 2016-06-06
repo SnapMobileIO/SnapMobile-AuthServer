@@ -26,6 +26,15 @@ authServer.setUser(User);
 var auth = authServer.authService; // auth.service.js
 ```
 
+# Facebook
+
+Add the following to .env:
+
+    # Facebook API keys
+    FACEBOOK_APP_ID=[YOUR_ID]
+    FACEBOOK_APP_SECRET=[YOUR_SECRET]
+    FACEBOOK_CALLBACK_URL=http://localhost:3000/auth/facebook/callback
+
 # Updating
 
 Make any changes in `/src`.
