@@ -4,6 +4,7 @@ import { Router } from 'express';
 import graph from 'fbgraph';
 import passport from 'passport';
 import * as facebookPassport from './passport';
+import crypto from 'crypto';
 
 var auth = require('../auth.service');
 
@@ -44,13 +45,9 @@ function setUser(_user) {
           .then(user => {
             if (!user) { // not registered
               //generate a random password for using Facebook login
-              let passwordCharacters =
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-              let passwordLength = 20;
-              let randomPassword = Array(passwordLength).join().split(',')
-                .map(function() { return passwordCharacters
-                .charAt(Math.floor(Math.random() * passwordCharacters.length)); })
-                .join('');
+
+              var randomPassword = crypto.randomBytes(16).toString('base64');
+
               _user.create({
                 firstName: profile.first_name,
                 lastName: profile.last_name,

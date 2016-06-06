@@ -14,6 +14,10 @@ var _passport3 = require('./passport');
 
 var facebookPassport = _interopRequireWildcard(_passport3);
 
+var _crypto = require('crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -52,32 +56,28 @@ function setUser(_user) {
     _fbgraph2.default.get('me?fields=' + fields.join() + '&access_token=' + req.body.accessToken, function (err, profile) {
       _user.findOne({ email: profile.email.toLowerCase() }).then(function (user) {
         if (!user) {
-          (function () {
-            // not registered
-            //generate a random password for using Facebook login
-            var passwordCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            var passwordLength = 20;
-            var randomPassword = Array(passwordLength).join().split(',').map(function () {
-              return passwordCharacters.charAt(Math.floor(Math.random() * passwordCharacters.length));
-            }).join('');
-            _user.create({
-              firstName: profile.first_name,
-              lastName: profile.last_name,
-              email: profile.email.toLowerCase(),
-              facebookID: profile.id,
-              password: randomPassword,
-              provider: 'facebook',
-              facebookAccessToken: req.body.accessToken,
-              avatar: profile.picture.data.url
-            }).then(function (result) {
-              result = result.toObject();
-              var token = auth.signToken(result._id);
-              res.json({ token: token });
-            }).catch(function (err) {
-              console.log(err);
-              res.status(400).json({ message: 'Could not create user, please try again.' });
-            });
-          })();
+          // not registered
+          //generate a random password for using Facebook login
+
+          var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
+
+          _user.create({
+            firstName: profile.first_name,
+            lastName: profile.last_name,
+            email: profile.email.toLowerCase(),
+            facebookID: profile.id,
+            password: randomPassword,
+            provider: 'facebook',
+            facebookAccessToken: req.body.accessToken,
+            avatar: profile.picture.data.url
+          }).then(function (result) {
+            result = result.toObject();
+            var token = auth.signToken(result._id);
+            res.json({ token: token });
+          }).catch(function (err) {
+            console.log(err);
+            res.status(400).json({ message: 'Could not create user, please try again.' });
+          });
         } else {
           // is registered
           user.facebookID = profile.id;
