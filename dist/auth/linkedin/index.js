@@ -31,10 +31,10 @@ var router = new _express.Router();
  * Sets the User of Auth and its dependencies for reference
  * @param {User} _user An instance of the User class
  */
-function setUser(_user) {
+function setUser(_user, _tag) {
   auth.setUser(_user);
 
-  linkedinPassport.setup(_user, auth);
+  linkedinPassport.setup(_user, auth, _tag);
   router.get('/', _passport2.default.authenticate('linkedin', { scope: 'r_emailaddress' }));
 
   router.get('/callback', function (req, res, next) {
@@ -71,35 +71,52 @@ function setUser(_user) {
       linkedin.people.me(function (err, $in) {
         _user.findOne({ email: $in.emailAddress.toLowerCase() }).then(function (user) {
           if (!user) {
-            // not registered
+            var randomPassword;
 
-            //generate a random password for using Facebook login
+            (function () {
+              // not registered
 
-            var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
+              //generate a random password for using Facebook login
 
-            var userObject = {
-              firstName: $in.firstName,
-              lastName: $in.lastName,
-              email: $in.emailAddress.toLowerCase(),
-              password: randomPassword,
-              provider: 'linkedin',
-              socialProfiles: {
-                linkedin: {
-                  id: $in.id,
-                  info: $in.headline
+              randomPassword = _crypto2.default.randomBytes(16).toString('base64');
+
+
+              var userObject = {
+                firstName: $in.firstName,
+                lastName: $in.lastName,
+                email: $in.emailAddress.toLowerCase(),
+                password: randomPassword,
+                provider: 'linkedin',
+                socialProfiles: {
+                  linkedin: {
+                    id: $in.id,
+                    info: $in.headline
+                  }
                 }
+              };
+              if ($in.pictureUrl) {
+                userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
               }
-            };
-            if ($in.pictureUrl) {
-              userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
-            }
 
-            _user.create(userObject).then(function (result) {
-              var token = Auth.signToken(result._id);
-              res.json({ token: token });
-            }).catch(function (err) {
-              return res.status(400).json({ message: 'Could not create user, please try again.' });
-            });
+              if (_tag && $in.industry) {
+                _tag.findOrCreate($in.industry).then(function (tag) {
+                  userObject._tags = [tag._id];
+                  _user.create(userObject).then(function (result) {
+                    var token = Auth.signToken(result._id);
+                    res.json({ token: token });
+                  }).catch(function (err) {
+                    return res.status(400).json({ message: 'Could not create user, please try again.' });
+                  });
+                });
+              } else {
+                _user.create(userObject).then(function (result) {
+                  var token = Auth.signToken(result._id);
+                  res.json({ token: token });
+                }).catch(function (err) {
+                  return res.status(400).json({ message: 'Could not create user, please try again.' });
+                });
+              }
+            })();
           } else {
             // is registered
             if (!user.socialProfiles) {
@@ -124,6 +141,16 @@ function setUser(_user) {
             }
 
             user.markModified('socialProfiles');
+
+            if (_tag && $in.industry) {
+              _tag.findOrCreate($in.industry).then(function (tag) {
+                if (user._tags.indexOf(tag._id) === -1) {
+                  user._tags.push([tag._id]);
+                  user.save();
+                }
+              });
+            }
+
             user.save();
             var token = auth.signToken(user._id);
             res.json({ token: token });

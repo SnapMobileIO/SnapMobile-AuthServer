@@ -4,12 +4,13 @@ import passport from 'passport';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin';
 import crypto from 'crypto';
 
-export function setup(User, Auth) {
+export function setup(User, Auth, Tag) {
   passport.use(new LinkedInStrategy({
       consumerKey: process.env.LINKEDIN_API_KEY,
       consumerSecret: process.env.LINKEDIN_SECRET_KEY,
       callbackURL: process.env.LINKEDIN_CALLBACK_URL,
-      profileFields: ['id', 'first-name', 'last-name', 'email-address', 'headline', 'picture-url']
+      profileFields: ['id', 'first-name', 'last-name', 'email-address', 'headline', 'picture-url',
+        'industry']
     },
     function(token, tokenSecret, profile, done) {
       User.findOne({ email: profile.emails[0].value.toLowerCase() })
@@ -37,12 +38,26 @@ export function setup(User, Auth) {
             userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
           }
 
-          User.create(userObject).then(result => {
-            result = result.toObject();
-            result.token = Auth.signToken(result._id);
-            return done(false, result);
-          })
-          .catch(err => done(err));
+          if (Tag && profile._json.industry) {
+            Tag.findOrCreate(profile._json.industry)
+            .then(tag => {
+              userObject._tags = [tag._id];
+              User.create(userObject).then(result => {
+                result = result.toObject();
+                result.token = Auth.signToken(result._id);
+                return done(false, result);
+              })
+              .catch(err => done(err));
+            });
+          } else {
+            User.create(userObject).then(result => {
+              result = result.toObject();
+              result.token = Auth.signToken(result._id);
+              return done(false, result);
+            })
+            .catch(err => done(err));
+          }
+
         } else { // is registered
           if (!user.socialProfiles) {
             user.socialProfiles = { linkedin: {} };
@@ -66,6 +81,17 @@ export function setup(User, Auth) {
           }
 
           user.markModified('socialProfiles');
+
+          if (Tag && profile._json.industry) {
+            Tag.findOrCreate(profile._json.industry)
+            .then(tag => {
+              if (user._tags.indexOf(tag._id) === -1) {
+                user._tags.push([tag._id]);
+                user.save();
+              }
+            });
+          }
+
           user.save();
           return done(false, user);
         }

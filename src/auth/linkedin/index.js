@@ -16,10 +16,10 @@ const router = new Router();
  * Sets the User of Auth and its dependencies for reference
  * @param {User} _user An instance of the User class
  */
-function setUser(_user) {
+function setUser(_user, _tag) {
   auth.setUser(_user);
 
-  linkedinPassport.setup(_user, auth);
+  linkedinPassport.setup(_user, auth, _tag);
   router.get('/', passport.authenticate('linkedin', { scope: 'r_emailaddress' }));
 
   router.get('/callback', (req, res, next) => {
@@ -80,12 +80,25 @@ function setUser(_user) {
               userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
             }
 
-            _user.create(userObject).then(result => {
-              var token = Auth.signToken(result._id);
-              res.json({ token: token });
-            })
-            .catch(err => res.status(400).json({ message:
-              'Could not create user, please try again.' }));
+            if (_tag && $in.industry) {
+              _tag.findOrCreate($in.industry)
+              .then(tag => {
+                userObject._tags = [tag._id];
+                _user.create(userObject).then(result => {
+                  var token = Auth.signToken(result._id);
+                  res.json({ token: token });
+                })
+                .catch(err => res.status(400).json({ message:
+                  'Could not create user, please try again.' }));
+              });
+            } else {
+              _user.create(userObject).then(result => {
+                var token = Auth.signToken(result._id);
+                res.json({ token: token });
+              })
+              .catch(err => res.status(400).json({ message:
+                'Could not create user, please try again.' }));
+            }
           } else { // is registered
             if (!user.socialProfiles) {
               user.socialProfiles = { linkedin: {} };
@@ -109,6 +122,17 @@ function setUser(_user) {
             }
 
             user.markModified('socialProfiles');
+
+            if (_tag && $in.industry) {
+              _tag.findOrCreate($in.industry)
+              .then(tag => {
+                if (user._tags.indexOf(tag._id) === -1) {
+                  user._tags.push([tag._id]);
+                  user.save();
+                }
+              });
+            }
+
             user.save();
             var token = auth.signToken(user._id);
             res.json({ token: token });

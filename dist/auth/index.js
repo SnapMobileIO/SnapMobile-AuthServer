@@ -15,6 +15,8 @@ router.use('/login', local.router);
 function setUser(_user) {
   var integrations = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 
+  var _tag = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
+
   local.setUser(_user);
   if (integrations.indexOf('facebook') >= 0) {
     var facebook = require('./facebook');
@@ -27,7 +29,7 @@ function setUser(_user) {
     var linkedin = require('./linkedin');
 
     router.use('/linkedin', linkedin.router);
-    linkedin.setUser(_user);
+    linkedin.setUser(_user, _tag);
   }
 }
 
