@@ -24,10 +24,14 @@ export function setup(User, Auth) {
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value.toLowerCase(),
-            linkedinID: profile.id,
             password: randomPassword,
             provider: 'linkedin',
-            info: profile._json.headline
+            socialProfiles: {
+              linkedin: {
+                id: profile.id,
+                info: profile._json.headline
+              }
+            }
           }).then(result => {
             result = result.toObject();
             result.token = Auth.signToken(result._id);
@@ -35,9 +39,13 @@ export function setup(User, Auth) {
           })
           .catch(err => done(err));
         } else { // is registered
-          user.linkedinID = profile.id;
-          if (!user.info || user.info == '') {
-            user.info = profile._json.headline;
+          if (!user.socialProfiles) {
+            user.socialProfiles = { linkedin: {} };
+          }
+
+          user.socialProfiles.linkedin.id = profile.id;
+          if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
+            user.socialProfiles.linkedin.info = profile._json.headline;
           }
 
           if (!user.firstName || user.firstName == '') {

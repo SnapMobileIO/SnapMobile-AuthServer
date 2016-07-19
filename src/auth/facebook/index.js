@@ -55,8 +55,12 @@ function setUser(_user) {
                 facebookID: profile.id,
                 password: randomPassword,
                 provider: 'facebook',
-                facebookAccessToken: req.body.accessToken,
-                avatar: { url: profile.picture.data.url, hostedType: 'external' }
+                socialProfiles: {
+                  facebook: {
+                    accessToken: req.body.accessToken,
+                    avatar: profile.picture.data.url
+                  }
+                }
               }).then(result => {
                 result = result.toObject();
                 let token = auth.signToken(result._id);
@@ -67,8 +71,12 @@ function setUser(_user) {
                 res.status(400).json({ message: 'Could not create user, please try again.' });
               });
             } else { // is registered
-              user.facebookID = profile.id;
-              user.facebookAccessToken = req.body.accessToken;
+              if (!user.socialProfiles) {
+                user.socialProfiles = { facebook: {} };
+              }
+
+              user.socialProfiles.facebook.id = profile.id;
+              user.socialProfiles.facebook.accessToken = req.body.accessToken;
               user.save();
               let token = auth.signToken(user._id);
               res.json({ token });

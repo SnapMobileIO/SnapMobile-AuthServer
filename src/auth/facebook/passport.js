@@ -23,11 +23,16 @@ export function setup(User, Auth) {
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value.toLowerCase(),
-            facebookID: profile.id,
             password: randomPassword,
             provider: 'facebook',
-            facebookAccessToken: accessToken,
-            facebookRefreshToken: refreshToken,
+            socialProfiles: {
+              facebook: {
+                id: profile.id,
+
+                accessToken: accessToken,
+                refreshToken: refreshToken
+              }
+            }
           }).then(result => {
             result = result.toObject();
             result.token = Auth.signToken(result._id);
@@ -35,9 +40,14 @@ export function setup(User, Auth) {
           })
           .catch(err => done(err));
         } else { // is registered
-          user.facebookID = profile.id;
-          user.facebookAccessToken = accessToken;
-          user.facebookRefreshToken = refreshToken;
+
+          if (!user.socialProfiles) {
+            user.socialProfiles = { facebook: {} };
+          }
+
+          user.socialProfiles.facebook.id = profile.id;
+          user.socialProfiles.facebook.accessToken = accessToken;
+          user.socialProfiles.facebook.refreshToken = refreshToken;
           user.save();
           return done(false, user);
         }
