@@ -59,14 +59,17 @@ function setUser(_user, _tag) {
       form: {
         grant_type: 'authorization_code',
         code: req.body.code,
-        redirect_uri: 'http://localhost/callback',
+        redirect_uri: 'http://' + req.headers.host + '/linkedin-callback',
         client_id: process.env.LINKEDIN_API_KEY,
         client_secret: process.env.LINKEDIN_SECRET_KEY
       }
     };
-
     _request2.default.post(options, function (error, response, body) {
       var bodyJSON = JSON.parse(body);
+      if (!bodyJSON.access_token) {
+        return;
+      }
+
       var linkedin = Linkedin.init(bodyJSON.access_token);
       linkedin.people.me(function (err, $in) {
         _user.findOne({ email: $in.emailAddress.toLowerCase() }).then(function (user) {
