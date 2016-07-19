@@ -9,7 +9,7 @@ export function setup(User, Auth) {
       consumerKey: process.env.LINKEDIN_API_KEY,
       consumerSecret: process.env.LINKEDIN_SECRET_KEY,
       callbackURL: process.env.LINKEDIN_CALLBACK_URL,
-      profileFields: ['id', 'first-name', 'last-name', 'email-address', 'headline']
+      profileFields: ['id', 'first-name', 'last-name', 'email-address', 'headline', 'picture-url']
     },
     function(token, tokenSecret, profile, done) {
       User.findOne({ email: profile.emails[0].value.toLowerCase() })

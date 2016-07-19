@@ -4,8 +4,11 @@ import { Router } from 'express';
 import passport from 'passport';
 import * as linkedinPassport from './passport';
 import crypto from 'crypto';
+import request from 'request';
 
 var auth = require('../auth.service');
+var Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY,
+  process.env.LINKEDIN_SECRET_KEY, 'http://localhost/callback');
 
 const router = new Router();
 
@@ -34,49 +37,76 @@ function setUser(_user) {
     })(req, res, next);
   });
 
-  /*router.post('/', (req, res, next) => {
-    let fields = ['id', 'first-name', 'last-name', 'email', 'picture'];
-    graph.get('me?fields=' + fields.join()
-        + '&access_token=' + req.body.accessToken, function(err, profile) {
-        _user.findOne({ email: profile.email.toLowerCase() })
-          .then(user => {
-            if (!user) { // not registered
-              //generate a random password for using Facebook login
+  router.post('/', (req, res, next) => {
+    var options = {
+      url: 'https://www.linkedin.com/oauth/v2/accessToken',
+      method: 'POST',
+      headers: {},
+      form: {
+        grant_type: 'authorization_code',
+        code: req.body.code,
+        redirect_uri: 'http://localhost/callback',
+        client_id: process.env.LINKEDIN_API_KEY,
+        client_secret: process.env.LINKEDIN_SECRET_KEY
+      }
+    };
 
-              var randomPassword = crypto.randomBytes(16).toString('base64');
+    request.post(options, (error, response, body) => {
+      let bodyJSON = JSON.parse(body);
+      var linkedin = Linkedin.init(bodyJSON.access_token);
+      linkedin.people.me(function(err, $in) {
+        _user.findOne({ email: $in.emailAddress.toLowerCase() })
+        .then(user => {
+          if (!user) { // not registered
 
-              _user.create({
-                firstName: profile.first_name,
-                lastName: profile.last_name,
-                email: profile.email.toLowerCase(),
-                facebookID: profile.id,
-                password: randomPassword,
-                provider: 'facebook',
-                facebookAccessToken: req.body.accessToken,
-                avatar: { url: profile.picture.data.url, hostedType: 'external' }
-              }).then(result => {
-                result = result.toObject();
-                let token = auth.signToken(result._id);
-                res.json({ token });
-              })
-              .catch(err => {
-                console.log(err);
-                res.status(400).json({ message: 'Could not create user, please try again.' });
-              });
-            } else { // is registered
-              user.facebookID = profile.id;
-              user.facebookAccessToken = req.body.accessToken;
-              user.save();
-              let token = auth.signToken(user._id);
-              res.json({ token });
+            //generate a random password for using Facebook login
+
+            var randomPassword = crypto.randomBytes(16).toString('base64');
+
+            _user.create({
+              firstName: $in.firstName,
+              lastName: $in.lastName,
+              email: $in.emailAddress.toLowerCase(),
+              password: randomPassword,
+              provider: 'linkedin',
+              socialProfiles: {
+                linkedin: {
+                  id: $in.id,
+                  info: $in.headline
+                }
+              }
+            }).then(result => {
+              var token = Auth.signToken(result._id);
+              res.json({ token: token });
+            })
+            .catch(err => res.status(400).json({ message: 'Could not create user, please try again.' }));
+          } else { // is registered
+            if (!user.socialProfiles) {
+              user.socialProfiles = { linkedin: {} };
             }
-          })
-          .catch(err => {
-            console.log(err);
-            res.status(400).json({ message: 'Something went wrong, please try again.' });
-          });
+
+            user.socialProfiles.linkedin.id = $in.id;
+            if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
+              user.socialProfiles.linkedin.info = $in.headline;
+            }
+
+            if (!user.firstName || user.firstName == '') {
+              user.firstName = $in.firstName;
+            }
+
+            if (!user.lastName || user.lastName == '') {
+              user.lastName = $in.lastName;
+            }
+
+            user.save();
+            var token = auth.signToken(user._id);
+            res.json({ token: token });
+          }
+        })
+      .catch(err => res.status(400).json({ message: 'Could not create user, please try again.' }));
       });
-  });*/
+    });
+  });
 }
 
 module.exports.authService = auth;
