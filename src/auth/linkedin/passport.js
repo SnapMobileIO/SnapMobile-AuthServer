@@ -20,7 +20,7 @@ export function setup(User, Auth) {
 
           var randomPassword = crypto.randomBytes(16).toString('base64');
 
-          User.create({
+          let userObject = {
             firstName: profile.name.givenName,
             lastName: profile.name.familyName,
             email: profile.emails[0].value.toLowerCase(),
@@ -29,10 +29,15 @@ export function setup(User, Auth) {
             socialProfiles: {
               linkedin: {
                 id: profile.id,
-                info: profile._json.headline
+                info: profile._json.headline,
               }
             }
-          }).then(result => {
+          };
+          if (profile._json.pictureUrl) {
+            userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
+          }
+
+          User.create(userObject).then(result => {
             result = result.toObject();
             result.token = Auth.signToken(result._id);
             return done(false, result);
@@ -56,6 +61,11 @@ export function setup(User, Auth) {
             user.lastName = profile.name.familyName;
           }
 
+          if (profile._json.pictureUrl) {
+            user.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
+          }
+
+          user.markModified('socialProfiles');
           user.save();
           return done(false, user);
         }

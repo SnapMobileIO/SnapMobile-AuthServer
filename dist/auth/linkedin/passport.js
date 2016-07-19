@@ -32,7 +32,7 @@ function setup(User, Auth) {
 
         var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
-        User.create({
+        var userObject = {
           firstName: profile.name.givenName,
           lastName: profile.name.familyName,
           email: profile.emails[0].value.toLowerCase(),
@@ -44,7 +44,12 @@ function setup(User, Auth) {
               info: profile._json.headline
             }
           }
-        }).then(function (result) {
+        };
+        if (profile._json.pictureUrl) {
+          userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
+        }
+
+        User.create(userObject).then(function (result) {
           result = result.toObject();
           result.token = Auth.signToken(result._id);
           return done(false, result);
@@ -70,6 +75,11 @@ function setup(User, Auth) {
           user.lastName = profile.name.familyName;
         }
 
+        if (profile._json.pictureUrl) {
+          user.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
+        }
+
+        user.markModified('socialProfiles');
         user.save();
         return done(false, user);
       }

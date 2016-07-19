@@ -63,7 +63,7 @@ function setUser(_user) {
 
             var randomPassword = crypto.randomBytes(16).toString('base64');
 
-            _user.create({
+            let userObject = {
               firstName: $in.firstName,
               lastName: $in.lastName,
               email: $in.emailAddress.toLowerCase(),
@@ -75,11 +75,17 @@ function setUser(_user) {
                   info: $in.headline
                 }
               }
-            }).then(result => {
+            };
+            if ($in.pictureUrl) {
+              userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            }
+
+            _user.create(userObject).then(result => {
               var token = Auth.signToken(result._id);
               res.json({ token: token });
             })
-            .catch(err => res.status(400).json({ message: 'Could not create user, please try again.' }));
+            .catch(err => res.status(400).json({ message:
+              'Could not create user, please try again.' }));
           } else { // is registered
             if (!user.socialProfiles) {
               user.socialProfiles = { linkedin: {} };
@@ -98,6 +104,11 @@ function setUser(_user) {
               user.lastName = $in.lastName;
             }
 
+            if ($in.pictureUrl) {
+              user.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            }
+
+            user.markModified('socialProfiles');
             user.save();
             var token = auth.signToken(user._id);
             res.json({ token: token });

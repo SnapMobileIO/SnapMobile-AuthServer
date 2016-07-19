@@ -77,7 +77,7 @@ function setUser(_user) {
 
             var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
-            _user.create({
+            var userObject = {
               firstName: $in.firstName,
               lastName: $in.lastName,
               email: $in.emailAddress.toLowerCase(),
@@ -89,7 +89,12 @@ function setUser(_user) {
                   info: $in.headline
                 }
               }
-            }).then(function (result) {
+            };
+            if ($in.pictureUrl) {
+              userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            }
+
+            _user.create(userObject).then(function (result) {
               var token = Auth.signToken(result._id);
               res.json({ token: token });
             }).catch(function (err) {
@@ -114,6 +119,11 @@ function setUser(_user) {
               user.lastName = $in.lastName;
             }
 
+            if ($in.pictureUrl) {
+              user.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            }
+
+            user.markModified('socialProfiles');
             user.save();
             var token = auth.signToken(user._id);
             res.json({ token: token });
