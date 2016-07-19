@@ -93,7 +93,7 @@ function setUser(_user, _tag) {
               });
             } else {
               _user.create(userObject).then(result => {
-                var token = Auth.signToken(result._id);
+                var token = auth.signToken(result._id);
                 res.json({ token: token });
               })
               .catch(err => res.status(400).json({ message:

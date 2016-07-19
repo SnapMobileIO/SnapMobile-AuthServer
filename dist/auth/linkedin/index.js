@@ -110,7 +110,7 @@ function setUser(_user, _tag) {
                 });
               } else {
                 _user.create(userObject).then(function (result) {
-                  var token = Auth.signToken(result._id);
+                  var token = auth.signToken(result._id);
                   res.json({ token: token });
                 }).catch(function (err) {
                   return res.status(400).json({ message: 'Could not create user, please try again.' });
