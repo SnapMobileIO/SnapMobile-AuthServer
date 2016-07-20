@@ -68,8 +68,12 @@ function setUser(_user) {
             facebookID: profile.id,
             password: randomPassword,
             provider: 'facebook',
-            facebookAccessToken: req.body.accessToken,
-            avatar: { url: profile.picture.data.url, hostedType: 'external' }
+            socialProfiles: {
+              facebook: {
+                accessToken: req.body.accessToken,
+                avatar: profile.picture.data.url
+              }
+            }
           }).then(function (result) {
             result = result.toObject();
             var token = auth.signToken(result._id);
@@ -80,8 +84,12 @@ function setUser(_user) {
           });
         } else {
           // is registered
-          user.facebookID = profile.id;
-          user.facebookAccessToken = req.body.accessToken;
+          if (!user.socialProfiles) {
+            user.socialProfiles = { facebook: {} };
+          }
+
+          user.socialProfiles.facebook.id = profile.id;
+          user.socialProfiles.facebook.accessToken = req.body.accessToken;
           user.save();
           var token = auth.signToken(user._id);
           res.json({ token: token });

@@ -35,6 +35,27 @@ Add the following to .env:
     FACEBOOK_APP_SECRET=[YOUR_SECRET]
     FACEBOOK_CALLBACK_URL=http://localhost:3000/auth/facebook/callback
 
+Then, update your call of `setUser` to:
+
+    authServer.setUser(User, ['linkedin']);
+
+# Linkedin
+
+Add the following to .env:
+
+```
+# Linkedin API keys
+LINKEDIN_API_KEY=
+LINKEDIN_SECRET_KEY=
+LINKEDIN_CALLBACK_URL=http://localhost:3000/auth/linkedin/callback
+```
+
+Then, update your call of `setUser` to:
+
+    authServer.setUser(User, ['linkedin']);
+
+Add the following to .env:
+
 # Updating
 
 Make any changes in `/src`.
