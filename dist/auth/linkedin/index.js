@@ -40,8 +40,7 @@ function setUser(_user, _tag) {
   router.get('/callback', function (req, res, next) {
     _passport2.default.authenticate('linkedin', { failureRedirect: '/login' }, function (err, user) {
       if (!user) {
-        console.log(err);
-        console.log(user);
+        console.error(err);
         return res.status(404).json({ message: 'Something went wrong, please try again.' });
       }
 
@@ -71,38 +70,35 @@ function setUser(_user, _tag) {
       }
 
       var linkedin = Linkedin.init(bodyJSON.access_token);
-      linkedin.people.me(function (err, $in) {
-        _user.findOne({ email: $in.emailAddress.toLowerCase() }).then(function (user) {
+      linkedin.people.me(function (err, linkedInUser) {
+        _user.findOne({ email: linkedInUser.emailAddress.toLowerCase() }).then(function (user) {
           if (!user) {
-            var randomPassword;
-
             (function () {
               // not registered
 
               //generate a random password for using Facebook login
 
-              randomPassword = _crypto2.default.randomBytes(16).toString('base64');
-
+              var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
               var userObject = {
-                firstName: $in.firstName,
-                lastName: $in.lastName,
-                email: $in.emailAddress.toLowerCase(),
+                firstName: linkedInUser.firstName,
+                lastName: linkedInUser.lastName,
+                email: linkedInUser.emailAddress.toLowerCase(),
                 password: randomPassword,
                 provider: 'linkedin',
                 socialProfiles: {
                   linkedin: {
-                    id: $in.id,
-                    info: $in.headline
+                    id: linkedInUser.id,
+                    info: linkedInUser.headline
                   }
                 }
               };
-              if ($in.pictureUrl) {
-                userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
+              if (linkedInUser.pictureUrl) {
+                userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
               }
 
-              if (_tag && $in.industry) {
-                _tag.findOrCreate($in.industry).then(function (tag) {
+              if (_tag && linkedInUser.industry) {
+                _tag.findOrCreate(linkedInUser.industry).then(function (tag) {
                   userObject._tags = [tag._id];
                   _user.create(userObject).then(function (result) {
                     var token = Auth.signToken(result._id);
@@ -126,27 +122,27 @@ function setUser(_user, _tag) {
               user.socialProfiles = { linkedin: {} };
             }
 
-            user.socialProfiles.linkedin.id = $in.id;
+            user.socialProfiles.linkedin.id = linkedInUser.id;
             if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
-              user.socialProfiles.linkedin.info = $in.headline;
+              user.socialProfiles.linkedin.info = linkedInUser.headline;
             }
 
             if (!user.firstName || user.firstName == '') {
-              user.firstName = $in.firstName;
+              user.firstName = linkedInUser.firstName;
             }
 
             if (!user.lastName || user.lastName == '') {
-              user.lastName = $in.lastName;
+              user.lastName = linkedInUser.lastName;
             }
 
-            if ($in.pictureUrl) {
-              user.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            if (linkedInUser.pictureUrl) {
+              user.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
 
             user.markModified('socialProfiles');
 
-            if (_tag && $in.industry) {
-              _tag.findOrCreate($in.industry).then(function (tag) {
+            if (_tag && linkedInUser.industry) {
+              _tag.findOrCreate(linkedInUser.industry).then(function (tag) {
                 if (user._tags.indexOf(tag._id) === -1) {
                   user._tags.push([tag._id]);
                   user.save();
