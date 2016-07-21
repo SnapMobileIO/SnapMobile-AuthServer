@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setup = setup;
+exports.initialize = initialize;
 
 var _passport = require('passport');
 
@@ -17,7 +17,7 @@ var _crypto2 = _interopRequireDefault(_crypto);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function setup(User, Auth, Tag) {
+function initialize(User, Auth, callback) {
   _passport2.default.use(new _passportLinkedin.Strategy({
     consumerKey: process.env.LINKEDIN_API_KEY,
     consumerSecret: process.env.LINKEDIN_SECRET_KEY,
@@ -26,54 +26,37 @@ function setup(User, Auth, Tag) {
   }, function (token, tokenSecret, profile, done) {
     User.findOne({ email: profile.emails[0].value.toLowerCase() }).then(function (user) {
       if (!user) {
-        var randomPassword;
+        // not registered
 
-        (function () {
-          // not registered
+        //generate a random password for using Facebook login
 
-          //generate a random password for using Facebook login
+        var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
-          randomPassword = _crypto2.default.randomBytes(16).toString('base64');
-
-
-          var userObject = {
-            firstName: profile.name.givenName,
-            lastName: profile.name.familyName,
-            email: profile.emails[0].value.toLowerCase(),
-            password: randomPassword,
-            provider: 'linkedin',
-            socialProfiles: {
-              linkedin: {
-                id: profile.id,
-                info: profile._json.headline
-              }
+        var userObject = {
+          firstName: profile.name.givenName,
+          lastName: profile.name.familyName,
+          email: profile.emails[0].value.toLowerCase(),
+          password: randomPassword,
+          provider: 'linkedin',
+          socialProfiles: {
+            linkedin: {
+              id: profile.id,
+              info: profile._json.headline
             }
-          };
-          if (profile._json.pictureUrl) {
-            userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
           }
+        };
+        if (profile._json.pictureUrl) {
+          userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
+        }
 
-          if (Tag && profile._json.industry) {
-            Tag.findOrCreate(profile._json.industry).then(function (tag) {
-              userObject._tags = [tag._id];
-              User.create(userObject).then(function (result) {
-                result = result.toObject();
-                result.token = Auth.signToken(result._id);
-                return done(false, result);
-              }).catch(function (err) {
-                return done(err);
-              });
-            });
-          } else {
-            User.create(userObject).then(function (result) {
-              result = result.toObject();
-              result.token = Auth.signToken(result._id);
-              return done(false, result);
-            }).catch(function (err) {
-              return done(err);
-            });
-          }
-        })();
+        User.create(userObject).then(function (result) {
+          result = result.toObject();
+          result.token = Auth.signToken(result._id);
+          callback(result, profile);
+          return done(false, result);
+        }).catch(function (err) {
+          return done(err);
+        });
       } else {
         // is registered
         if (!user.socialProfiles) {
@@ -99,16 +82,9 @@ function setup(User, Auth, Tag) {
 
         user.markModified('socialProfiles');
 
-        if (Tag && profile._json.industry) {
-          Tag.findOrCreate(profile._json.industry).then(function (tag) {
-            if (user._tags.indexOf(tag._id) === -1) {
-              user._tags.push([tag._id]);
-              user.save();
-            }
-          });
-        }
-
         user.save();
+
+        callback(user, profile);
         return done(false, user);
       }
     }).catch(function (err) {

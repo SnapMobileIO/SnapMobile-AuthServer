@@ -30,10 +30,10 @@ var router = new _express.Router();
  * Sets the User of Auth and its dependencies for reference
  * @param {User} _user An instance of the User class
  */
-function setUser(_user) {
+function initialize(_user, callback) {
   auth.setUser(_user);
 
-  facebookPassport.setup(_user, auth);
+  facebookPassport.initialize(_user, auth, callback);
 
   router.get('/', _passport2.default.authenticate('facebook', { scope: 'email' }));
 
@@ -75,6 +75,7 @@ function setUser(_user) {
               }
             }
           }).then(function (result) {
+            callback(result, profile);
             result = result.toObject();
             var token = auth.signToken(result._id);
             res.json({ token: token });
@@ -91,6 +92,8 @@ function setUser(_user) {
           user.socialProfiles.facebook.id = profile.id;
           user.socialProfiles.facebook.accessToken = req.body.accessToken;
           user.save();
+
+          callback(user, profile);
           var token = auth.signToken(user._id);
           res.json({ token: token });
         }

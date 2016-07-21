@@ -13,26 +13,40 @@ router.use('/login', local.router);
  * @param {User} _user An instance of the User class
  */
 function setUser(_user) {
-  var integrations = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
-
-  var _tag = arguments.length <= 2 || arguments[2] === undefined ? null : arguments[2];
-
   local.setUser(_user);
-  if (integrations.indexOf('facebook') >= 0) {
+}
+
+function initialize(_user) {
+  var integrations = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
+  setUser(_user);
+
+  if (integrations.some(function (item) {
+    return item.name === 'facebook';
+  })) {
     var facebook = require('./facebook');
+    var callback = integrations.find(function (item) {
+      return item.name == 'facebook';
+    }).callback;
 
     router.use('/facebook', facebook.router);
-    facebook.setUser(_user);
+    facebook.initialize(_user, callback);
   }
 
-  if (integrations.indexOf('linkedin') >= 0) {
+  if (integrations.some(function (item) {
+    return item.name == 'linkedin';
+  }) >= 0) {
+    var callback = integrations.find(function (item) {
+      return item.name == 'linkedin';
+    }).callback;
     var linkedin = require('./linkedin');
 
     router.use('/linkedin', linkedin.router);
-    linkedin.setUser(_user, _tag);
+    linkedin.initialize(_user, callback);
   }
 }
 
 module.exports.authService = local.authService;
 module.exports.router = router;
 module.exports.setUser = setUser;
+module.exports.initialize = initialize;

@@ -4,7 +4,7 @@ import passport from 'passport';
 import { Strategy as LinkedInStrategy } from 'passport-linkedin';
 import crypto from 'crypto';
 
-export function setup(User, Auth, Tag) {
+export function initialize(User, Auth, callback) {
   passport.use(new LinkedInStrategy({
       consumerKey: process.env.LINKEDIN_API_KEY,
       consumerSecret: process.env.LINKEDIN_SECRET_KEY,
@@ -38,25 +38,13 @@ export function setup(User, Auth, Tag) {
             userObject.socialProfiles.linkedin.avatar = profile._json.pictureUrl;
           }
 
-          if (Tag && profile._json.industry) {
-            Tag.findOrCreate(profile._json.industry)
-            .then(tag => {
-              userObject._tags = [tag._id];
-              User.create(userObject).then(result => {
-                result = result.toObject();
-                result.token = Auth.signToken(result._id);
-                return done(false, result);
-              })
-              .catch(err => done(err));
-            });
-          } else {
-            User.create(userObject).then(result => {
-              result = result.toObject();
-              result.token = Auth.signToken(result._id);
-              return done(false, result);
-            })
-            .catch(err => done(err));
-          }
+          User.create(userObject).then(result => {
+            result = result.toObject();
+            result.token = Auth.signToken(result._id);
+            callback(result, profile);
+            return done(false, result);
+          })
+          .catch(err => done(err));
 
         } else { // is registered
           if (!user.socialProfiles) {
@@ -82,17 +70,9 @@ export function setup(User, Auth, Tag) {
 
           user.markModified('socialProfiles');
 
-          if (Tag && profile._json.industry) {
-            Tag.findOrCreate(profile._json.industry)
-            .then(tag => {
-              if (user._tags.indexOf(tag._id) === -1) {
-                user._tags.push([tag._id]);
-                user.save();
-              }
-            });
-          }
-
           user.save();
+
+          callback(user, profile);
           return done(false, user);
         }
       })
