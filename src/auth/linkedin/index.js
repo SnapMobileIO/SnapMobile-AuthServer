@@ -6,8 +6,8 @@ import * as linkedinPassport from './passport';
 import crypto from 'crypto';
 import request from 'request';
 
-var auth = require('../auth.service');
-var Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY,
+const auth = require('../auth.service');
+const Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY,
   process.env.LINKEDIN_SECRET_KEY, 'http://localhost/callback');
 
 const router = new Router();
@@ -26,8 +26,7 @@ function setUser(_user, _tag) {
     passport.authenticate('linkedin', { failureRedirect: '/login' },
     (err, user) => {
       if (!user) {
-        console.log(err);
-        console.log(user);
+        console.error(err);
         return res.status(404).json({ message: 'Something went wrong, please try again.' });
       }
 
@@ -38,7 +37,7 @@ function setUser(_user, _tag) {
   });
 
   router.post('/', (req, res, next) => {
-    var options = {
+    let options = {
       url: 'https://www.linkedin.com/oauth/v2/accessToken',
       method: 'POST',
       headers: {},
@@ -54,39 +53,39 @@ function setUser(_user, _tag) {
       let bodyJSON = JSON.parse(body);
       if (!bodyJSON.access_token) { return; }
 
-      var linkedin = Linkedin.init(bodyJSON.access_token);
-      linkedin.people.me(function(err, $in) {
-        _user.findOne({ email: $in.emailAddress.toLowerCase() })
+      let linkedin = Linkedin.init(bodyJSON.access_token);
+      linkedin.people.me((err, linkedInUser) => {
+        _user.findOne({ email: linkedInUser.emailAddress.toLowerCase() })
         .then(user => {
           if (!user) { // not registered
 
             //generate a random password for using Facebook login
 
-            var randomPassword = crypto.randomBytes(16).toString('base64');
+            let randomPassword = crypto.randomBytes(16).toString('base64');
 
             let userObject = {
-              firstName: $in.firstName,
-              lastName: $in.lastName,
-              email: $in.emailAddress.toLowerCase(),
+              firstName: linkedInUser.firstName,
+              lastName: linkedInUser.lastName,
+              email: linkedInUser.emailAddress.toLowerCase(),
               password: randomPassword,
               provider: 'linkedin',
               socialProfiles: {
                 linkedin: {
-                  id: $in.id,
-                  info: $in.headline
+                  id: linkedInUser.id,
+                  info: linkedInUser.headline
                 }
               }
             };
-            if ($in.pictureUrl) {
-              userObject.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            if (linkedInUser.pictureUrl) {
+              userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
 
-            if (_tag && $in.industry) {
-              _tag.findOrCreate($in.industry)
+            if (_tag && linkedInUser.industry) {
+              _tag.findOrCreate(linkedInUser.industry)
               .then(tag => {
                 userObject._tags = [tag._id];
                 _user.create(userObject).then(result => {
-                  var token = Auth.signToken(result._id);
+                  let token = Auth.signToken(result._id);
                   res.json({ token: token });
                 })
                 .catch(err => res.status(400).json({ message:
@@ -94,7 +93,7 @@ function setUser(_user, _tag) {
               });
             } else {
               _user.create(userObject).then(result => {
-                var token = auth.signToken(result._id);
+                let token = auth.signToken(result._id);
                 res.json({ token: token });
               })
               .catch(err => res.status(400).json({ message:
@@ -105,27 +104,27 @@ function setUser(_user, _tag) {
               user.socialProfiles = { linkedin: {} };
             }
 
-            user.socialProfiles.linkedin.id = $in.id;
+            user.socialProfiles.linkedin.id = linkedInUser.id;
             if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
-              user.socialProfiles.linkedin.info = $in.headline;
+              user.socialProfiles.linkedin.info = linkedInUser.headline;
             }
 
             if (!user.firstName || user.firstName == '') {
-              user.firstName = $in.firstName;
+              user.firstName = linkedInUser.firstName;
             }
 
             if (!user.lastName || user.lastName == '') {
-              user.lastName = $in.lastName;
+              user.lastName = linkedInUser.lastName;
             }
 
-            if ($in.pictureUrl) {
-              user.socialProfiles.linkedin.avatar = $in.pictureUrl;
+            if (linkedInUser.pictureUrl) {
+              user.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
 
             user.markModified('socialProfiles');
 
-            if (_tag && $in.industry) {
-              _tag.findOrCreate($in.industry)
+            if (_tag && linkedInUser.industry) {
+              _tag.findOrCreate(linkedInUser.industry)
               .then(tag => {
                 if (user._tags.indexOf(tag._id) === -1) {
                   user._tags.push([tag._id]);
@@ -135,7 +134,7 @@ function setUser(_user, _tag) {
             }
 
             user.save();
-            var token = auth.signToken(user._id);
+            let token = auth.signToken(user._id);
             res.json({ token: token });
           }
         })
