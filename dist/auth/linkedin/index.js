@@ -31,10 +31,10 @@ var router = new _express.Router();
  * Sets the User of Auth and its dependencies for reference
  * @param {User} _user An instance of the User class
  */
-function setUser(_user, _tag) {
+function initialize(_user, callback) {
   auth.setUser(_user);
 
-  linkedinPassport.setup(_user, auth, _tag);
+  linkedinPassport.initialize(_user, auth, callback);
   router.get('/', _passport2.default.authenticate('linkedin', { scope: 'r_emailaddress' }));
 
   router.get('/callback', function (req, res, next) {
@@ -73,49 +73,36 @@ function setUser(_user, _tag) {
       linkedin.people.me(function (err, linkedInUser) {
         _user.findOne({ email: linkedInUser.emailAddress.toLowerCase() }).then(function (user) {
           if (!user) {
-            (function () {
-              // not registered
+            // not registered
 
-              //generate a random password for using Facebook login
+            //generate a random password for using Facebook login
 
-              var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
+            var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
-              var userObject = {
-                firstName: linkedInUser.firstName,
-                lastName: linkedInUser.lastName,
-                email: linkedInUser.emailAddress.toLowerCase(),
-                password: randomPassword,
-                provider: 'linkedin',
-                socialProfiles: {
-                  linkedin: {
-                    id: linkedInUser.id,
-                    info: linkedInUser.headline
-                  }
+            var userObject = {
+              firstName: linkedInUser.firstName,
+              lastName: linkedInUser.lastName,
+              email: linkedInUser.emailAddress.toLowerCase(),
+              password: randomPassword,
+              provider: 'linkedin',
+              socialProfiles: {
+                linkedin: {
+                  id: linkedInUser.id,
+                  info: linkedInUser.headline
                 }
-              };
-              if (linkedInUser.pictureUrl) {
-                userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
               }
+            };
+            if (linkedInUser.pictureUrl) {
+              userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
+            }
 
-              if (_tag && linkedInUser.industry) {
-                _tag.findOrCreate(linkedInUser.industry).then(function (tag) {
-                  userObject._tags = [tag._id];
-                  _user.create(userObject).then(function (result) {
-                    var token = Auth.signToken(result._id);
-                    res.json({ token: token });
-                  }).catch(function (err) {
-                    return res.status(400).json({ message: 'Could not create user, please try again.' });
-                  });
-                });
-              } else {
-                _user.create(userObject).then(function (result) {
-                  var token = auth.signToken(result._id);
-                  res.json({ token: token });
-                }).catch(function (err) {
-                  return res.status(400).json({ message: 'Could not create user, please try again.' });
-                });
-              }
-            })();
+            _user.create(userObject).then(function (result) {
+              callback(result, linkedInUser);
+              var token = auth.signToken(result._id);
+              res.json({ token: token });
+            }).catch(function (err) {
+              return res.status(400).json({ message: 'Could not create user, please try again.' });
+            });
           } else {
             // is registered
             if (!user.socialProfiles) {
@@ -141,16 +128,8 @@ function setUser(_user, _tag) {
 
             user.markModified('socialProfiles');
 
-            if (_tag && linkedInUser.industry) {
-              _tag.findOrCreate(linkedInUser.industry).then(function (tag) {
-                if (user._tags.indexOf(tag._id) === -1) {
-                  user._tags.push([tag._id]);
-                  user.save();
-                }
-              });
-            }
-
             user.save();
+            callback(user, linkedInUser);
             var token = auth.signToken(user._id);
             res.json({ token: token });
           }
@@ -164,4 +143,4 @@ function setUser(_user, _tag) {
 
 module.exports.authService = auth;
 module.exports.router = router;
-module.exports.setUser = setUser;
+module.exports.initialize = initialize;

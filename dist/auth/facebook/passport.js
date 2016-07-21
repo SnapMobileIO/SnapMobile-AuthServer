@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.setup = setup;
+exports.initialize = initialize;
 
 var _passport = require('passport');
 
@@ -13,7 +13,7 @@ var _passportFacebook = require('passport-facebook');
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function setup(User, Auth) {
+function initialize(User, Auth, callback) {
   _passport2.default.use(new _passportFacebook.Strategy({
     clientID: process.env.FACEBOOK_APP_ID,
     clientSecret: process.env.FACEBOOK_APP_SECRET,
@@ -43,6 +43,7 @@ function setup(User, Auth) {
             }
           }
         }).then(function (result) {
+          callback(result, profile);
           result = result.toObject();
           result.token = Auth.signToken(result._id);
           return done(false, result);
@@ -59,6 +60,8 @@ function setup(User, Auth) {
         user.socialProfiles.facebook.id = profile.id;
         user.socialProfiles.facebook.accessToken = accessToken;
         user.socialProfiles.facebook.refreshToken = refreshToken;
+
+        callback(user, profile);
         user.save();
         return done(false, user);
       }

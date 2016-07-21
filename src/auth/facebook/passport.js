@@ -3,7 +3,7 @@
 import passport from 'passport';
 import { Strategy as FacebookStrategy } from 'passport-facebook';
 
-export function setup(User, Auth) {
+export function initialize(User, Auth, callback) {
   passport.use(new FacebookStrategy({
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
@@ -34,6 +34,7 @@ export function setup(User, Auth) {
               }
             }
           }).then(result => {
+            callback(result, profile);
             result = result.toObject();
             result.token = Auth.signToken(result._id);
             return done(false, result);
@@ -48,6 +49,8 @@ export function setup(User, Auth) {
           user.socialProfiles.facebook.id = profile.id;
           user.socialProfiles.facebook.accessToken = accessToken;
           user.socialProfiles.facebook.refreshToken = refreshToken;
+
+          callback(user, profile);
           user.save();
           return done(false, user);
         }

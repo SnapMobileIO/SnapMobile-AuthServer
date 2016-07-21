@@ -16,10 +16,10 @@ const router = new Router();
  * Sets the User of Auth and its dependencies for reference
  * @param {User} _user An instance of the User class
  */
-function setUser(_user, _tag) {
+function initialize(_user, callback) {
   auth.setUser(_user);
 
-  linkedinPassport.setup(_user, auth, _tag);
+  linkedinPassport.initialize(_user, auth, callback);
   router.get('/', passport.authenticate('linkedin', { scope: 'r_emailaddress' }));
 
   router.get('/callback', (req, res, next) => {
@@ -80,25 +80,13 @@ function setUser(_user, _tag) {
               userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
 
-            if (_tag && linkedInUser.industry) {
-              _tag.findOrCreate(linkedInUser.industry)
-              .then(tag => {
-                userObject._tags = [tag._id];
-                _user.create(userObject).then(result => {
-                  let token = Auth.signToken(result._id);
-                  res.json({ token: token });
-                })
-                .catch(err => res.status(400).json({ message:
-                  'Could not create user, please try again.' }));
-              });
-            } else {
-              _user.create(userObject).then(result => {
-                let token = auth.signToken(result._id);
-                res.json({ token: token });
-              })
-              .catch(err => res.status(400).json({ message:
-                'Could not create user, please try again.' }));
-            }
+            _user.create(userObject).then(result => {
+              callback(result, linkedInUser);
+              let token = auth.signToken(result._id);
+              res.json({ token: token });
+            })
+            .catch(err => res.status(400).json({ message:
+              'Could not create user, please try again.' }));
           } else { // is registered
             if (!user.socialProfiles) {
               user.socialProfiles = { linkedin: {} };
@@ -123,17 +111,8 @@ function setUser(_user, _tag) {
 
             user.markModified('socialProfiles');
 
-            if (_tag && linkedInUser.industry) {
-              _tag.findOrCreate(linkedInUser.industry)
-              .then(tag => {
-                if (user._tags.indexOf(tag._id) === -1) {
-                  user._tags.push([tag._id]);
-                  user.save();
-                }
-              });
-            }
-
             user.save();
+            callback(user, linkedInUser);
             let token = auth.signToken(user._id);
             res.json({ token: token });
           }
@@ -146,4 +125,4 @@ function setUser(_user, _tag) {
 
 module.exports.authService = auth;
 module.exports.router = router;
-module.exports.setUser = setUser;
+module.exports.initialize = initialize;
