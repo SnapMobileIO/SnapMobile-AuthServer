@@ -13,7 +13,7 @@ To configure, add the following to `routes.js`:
 import User from '../app/user/user.model';
 ...
 var auth = require('snapmobile-authserver');
-auth.setUser(User);
+auth.initialize(User);
 app.use('/auth', auth.router);
 ```
 
@@ -22,7 +22,7 @@ To use `auth.service`, call the following:
 ```
 import authServer from 'snapmobile-authserver';
 import User from './user.model';
-authServer.setUser(User);
+authServer.initialize(User);
 var auth = authServer.authService; // auth.service.js
 ```
 
@@ -35,9 +35,15 @@ Add the following to .env:
     FACEBOOK_APP_SECRET=[YOUR_SECRET]
     FACEBOOK_CALLBACK_URL=http://localhost:3000/auth/facebook/callback
 
-Then, update your call of `setUser` to:
+Then, update your call of `initialize` to:
 
-    authServer.setUser(User, ['linkedin']);
+```
+authServer.initialize(User, [{ name: 'facebook', callback: (user, facebookProfile) => {
+    //configure any additional fields here. 
+}]);
+```
+
+By default, the user's name, profile photo, facebook id, facebook access token and facebook refresh token are stored under `user.socialProfiles.facebook`.
 
 # Linkedin
 
@@ -52,9 +58,13 @@ LINKEDIN_CALLBACK_URL=http://localhost:3000/auth/linkedin/callback
 
 Then, update your call of `setUser` to:
 
-    authServer.setUser(User, ['linkedin']);
+```
+authServer.initialize(User, [{ name: 'linkedin', callback: (user, linkedinProfile) => {
+    //configure any additional fields here. 
+}]);
+```
 
-Add the following to .env:
+By default, the user's name, photo, linkedin id, and headline are stored under `user.socialProfiles.linkedin`.
 
 # Updating
 
