@@ -26,7 +26,7 @@ function initialize(_user) {
   })) {
     var facebook = require('./facebook');
     var callback = integrations.find(function (item) {
-      return item.name == 'facebook';
+      return item.name === 'facebook';
     }).callback;
 
     router.use('/facebook', facebook.router);
@@ -34,10 +34,10 @@ function initialize(_user) {
   }
 
   if (integrations.some(function (item) {
-    return item.name == 'linkedin';
-  }) >= 0) {
+    return item.name === 'linkedin';
+  })) {
     var callback = integrations.find(function (item) {
-      return item.name == 'linkedin';
+      return item.name === 'linkedin';
     }).callback;
     var linkedin = require('./linkedin');
 

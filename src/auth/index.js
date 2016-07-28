@@ -22,14 +22,14 @@ function initialize(_user, integrations = {}) {
 
   if (integrations.some(item => item.name === 'facebook')) {
     var facebook = require('./facebook');
-    var callback = integrations.find(item => item.name == 'facebook').callback;
+    var callback = integrations.find(item => item.name === 'facebook').callback;
 
     router.use('/facebook', facebook.router);
     facebook.initialize(_user, callback);
   }
 
-  if (integrations.some(item => item.name == 'linkedin') >= 0) {
-    var callback = integrations.find(item => item.name == 'linkedin').callback;
+  if (integrations.some(item => item.name === 'linkedin')) {
+    var callback = integrations.find(item => item.name === 'linkedin').callback;
     var linkedin = require('./linkedin');
 
     router.use('/linkedin', linkedin.router);

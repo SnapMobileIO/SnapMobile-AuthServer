@@ -95,4 +95,4 @@ function initialize(_user, callback) {
 
 module.exports.authService = auth;
 module.exports.router = router;
-module.exports.setUser = setUser;
+module.exports.initialize = initialize;
