@@ -41,6 +41,10 @@ function initialize(_user, callback) {
     let fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     graph.get('me?fields=' + fields.join()
         + '&access_token=' + req.body.accessToken, function(err, profile) {
+        if (!profile.email) {
+          return;
+        }
+
         _user.findOne({ email: profile.email.toLowerCase() })
           .then(user => {
             if (!user) { // not registered

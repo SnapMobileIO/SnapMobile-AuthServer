@@ -54,6 +54,10 @@ function initialize(_user, callback) {
   router.post('/', function (req, res, next) {
     var fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     _fbgraph2.default.get('me?fields=' + fields.join() + '&access_token=' + req.body.accessToken, function (err, profile) {
+      if (!profile.email) {
+        return;
+      }
+
       _user.findOne({ email: profile.email.toLowerCase() }).then(function (user) {
         if (!user) {
           // not registered
