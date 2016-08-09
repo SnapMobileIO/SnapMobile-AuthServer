@@ -8,7 +8,7 @@ import request from 'request';
 
 const auth = require('../auth.service');
 const Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY,
-  process.env.LINKEDIN_SECRET_KEY, 'http://localhost/callback');
+  process.env.LINKEDIN_SECRET_KEY, process.env.LINKEDIN_CALLBACK_URL);
 
 const router = new Router();
 
