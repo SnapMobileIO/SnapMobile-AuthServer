@@ -23,7 +23,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var auth = require('../auth.service');
-var Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY, process.env.LINKEDIN_SECRET_KEY, 'http://localhost/callback');
+var Linkedin = require('node-linkedin')(process.env.LINKEDIN_API_KEY, process.env.LINKEDIN_SECRET_KEY, process.env.LINKEDIN_CALLBACK_URL);
 
 var router = new _express.Router();
 
