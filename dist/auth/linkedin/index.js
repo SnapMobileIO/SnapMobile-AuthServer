@@ -95,7 +95,6 @@ function initialize(_user, callback) {
             if (linkedInUser.pictureUrl) {
               userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
-
             _user.create(userObject).then(function (result) {
               callback(result, linkedInUser);
               var token = auth.signToken(result._id);
@@ -109,19 +108,19 @@ function initialize(_user, callback) {
               user.socialProfiles = { linkedin: {} };
             }
 
+            if (!user.socialProfiles.linkedin) {
+              user.socialProfiles.linkedin = {};
+            }
             user.socialProfiles.linkedin.id = linkedInUser.id;
             if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
               user.socialProfiles.linkedin.info = linkedInUser.headline;
             }
-
             if (!user.firstName || user.firstName == '') {
               user.firstName = linkedInUser.firstName;
             }
-
             if (!user.lastName || user.lastName == '') {
               user.lastName = linkedInUser.lastName;
             }
-
             if (linkedInUser.pictureUrl) {
               user.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }

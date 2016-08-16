@@ -79,7 +79,6 @@ function initialize(_user, callback) {
             if (linkedInUser.pictureUrl) {
               userObject.socialProfiles.linkedin.avatar = linkedInUser.pictureUrl;
             }
-
             _user.create(userObject).then(result => {
               callback(result, linkedInUser);
               let token = auth.signToken(result._id);
@@ -92,6 +91,10 @@ function initialize(_user, callback) {
               user.socialProfiles = { linkedin: {} };
             }
 
+            if (!user.socialProfiles.linkedin) {
+              user.socialProfiles.linkedin = {};
+            }
+            
             user.socialProfiles.linkedin.id = linkedInUser.id;
             if (!user.socialProfiles.linkedin.info || user.socialProfiles.linkedin.info == '') {
               user.socialProfiles.linkedin.info = linkedInUser.headline;
