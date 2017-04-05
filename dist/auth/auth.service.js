@@ -46,7 +46,7 @@ function setUser(_user) {
  * If shouldError is false, a 401 will not be returned, but req.user will be undefined
  */
 function isAuthenticated() {
-  var shouldError = arguments.length <= 0 || arguments[0] === undefined ? true : arguments[0];
+  var shouldError = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
 
   return (0, _composableMiddleware2.default)().use(function (req, res, next) {
     // Validate jwt
@@ -78,6 +78,7 @@ function isAuthenticated() {
 
       req.user = user;
       next();
+      return null;
     }).catch(function (err) {
       return next(err);
     });

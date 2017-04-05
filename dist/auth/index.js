@@ -17,7 +17,7 @@ function setUser(_user) {
 }
 
 function initialize(_user) {
-  var integrations = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+  var integrations = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
   setUser(_user);
 
