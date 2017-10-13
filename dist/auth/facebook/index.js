@@ -54,57 +54,59 @@ function initialize(_user, callback) {
   router.post('/', function (req, res, next) {
     var fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     _fbgraph2.default.get('me?fields=' + fields.join() + '&access_token=' + req.body.accessToken, function (err, profile) {
+
       if (!profile.email) {
-        return;
-      }
+        res.status(422).json({ message: 'Facebook profile did not return an email address' });
+      } else {
 
-      _user.findOne({ email: profile.email.toLowerCase() }).then(function (user) {
-        if (!user) {
-          // not registered
-          //generate a random password for using Facebook login
+        _user.findOne({ email: profile.email.toLowerCase() }).then(function (user) {
+          if (!user) {
+            // not registered
+            //generate a random password for using Facebook login
 
-          var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
+            var randomPassword = _crypto2.default.randomBytes(16).toString('base64');
 
-          _user.create({
-            firstName: profile.first_name,
-            lastName: profile.last_name,
-            email: profile.email.toLowerCase(),
-            facebookID: profile.id,
-            password: randomPassword,
-            provider: 'facebook',
-            socialProfiles: {
-              facebook: {
-                accessToken: req.body.accessToken,
-                avatar: profile.picture.data.url
+            _user.create({
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              email: profile.email.toLowerCase(),
+              facebookID: profile.id,
+              password: randomPassword,
+              provider: 'facebook',
+              socialProfiles: {
+                facebook: {
+                  accessToken: req.body.accessToken,
+                  avatar: profile.picture.data.url
+                }
               }
+            }).then(function (result) {
+              callback(result, profile);
+              result = result.toObject();
+              var token = auth.signToken(result._id);
+              res.json({ token: token });
+            }).catch(function (err) {
+              console.log(err);
+              res.status(400).json({ message: 'Could not create user, please try again.' });
+            });
+          } else {
+            // is registered
+            if (!user.socialProfiles) {
+              user.socialProfiles = { facebook: {} };
             }
-          }).then(function (result) {
-            callback(result, profile);
-            result = result.toObject();
-            var token = auth.signToken(result._id);
+
+            user.socialProfiles.facebook.id = profile.id;
+            user.socialProfiles.facebook.accessToken = req.body.accessToken;
+            user.save();
+
+            callback(user, profile);
+            var token = auth.signToken(user._id);
             res.json({ token: token });
-          }).catch(function (err) {
-            console.log(err);
-            res.status(400).json({ message: 'Could not create user, please try again.' });
-          });
-        } else {
-          // is registered
-          if (!user.socialProfiles) {
-            user.socialProfiles = { facebook: {} };
           }
-
-          user.socialProfiles.facebook.id = profile.id;
-          user.socialProfiles.facebook.accessToken = req.body.accessToken;
-          user.save();
-
-          callback(user, profile);
-          var token = auth.signToken(user._id);
-          res.json({ token: token });
-        }
-      }).catch(function (err) {
-        console.log(err);
-        res.status(400).json({ message: 'Something went wrong, please try again.' });
-      });
+        }).catch(function (err) {
+          console.log(err);
+          res.status(400).json({ message: 'Something went wrong, please try again.' });
+        });
+      }
     });
   });
 }

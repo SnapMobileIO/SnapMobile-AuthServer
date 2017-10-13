@@ -7,7 +7,8 @@
     "test": "mocha --recursive",
     "build": "babel server -d dist/server",
     "serve": "node dist/server/app.js",
-    "babel-node": "babel-node"
+    "babel-node": "babel-node",
+    "gulp": "gulp"
   },
   "author": "Jack Cable",
   "license": "ISC",

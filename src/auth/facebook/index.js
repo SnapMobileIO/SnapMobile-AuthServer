@@ -41,17 +41,18 @@ function initialize(_user, callback) {
     let fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     graph.get('me?fields=' + fields.join()
         + '&access_token=' + req.body.accessToken, function(err, profile) {
-        if (!profile.email) {
-          return;
-        }
 
-        _user.findOne({ email: profile.email.toLowerCase() })
+        if (!profile.email) {
+          res.status(422).json({ message: 'Facebook profile did not return an email address' });
+        } else {
+
+          _user.findOne({ email: profile.email.toLowerCase() })
           .then(user => {
             if (!user) { // not registered
               //generate a random password for using Facebook login
-
+              
               var randomPassword = crypto.randomBytes(16).toString('base64');
-
+              
               _user.create({
                 firstName: profile.first_name,
                 lastName: profile.last_name,
@@ -79,11 +80,11 @@ function initialize(_user, callback) {
               if (!user.socialProfiles) {
                 user.socialProfiles = { facebook: {} };
               }
-
+              
               user.socialProfiles.facebook.id = profile.id;
               user.socialProfiles.facebook.accessToken = req.body.accessToken;
               user.save();
-
+              
               callback(user, profile);
               let token = auth.signToken(user._id);
               res.json({ token });
@@ -93,6 +94,7 @@ function initialize(_user, callback) {
             console.log(err);
             res.status(400).json({ message: 'Something went wrong, please try again.' });
           });
+        }
       });
   });
 }
