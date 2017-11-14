@@ -54,7 +54,10 @@ function initialize(_user, callback) {
   router.post('/', function (req, res, next) {
     var fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     _fbgraph2.default.get('me?fields=' + fields.join() + '&access_token=' + req.body.accessToken, function (err, profile) {
+
+      // An email is always required from Facebook login
       if (!profile.email) {
+        res.status(422).json({ message: 'Facebook login requires your email.' });
         return;
       }
 

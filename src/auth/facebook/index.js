@@ -41,7 +41,10 @@ function initialize(_user, callback) {
     let fields = ['id', 'first_name', 'last_name', 'email', 'picture'];
     graph.get('me?fields=' + fields.join()
         + '&access_token=' + req.body.accessToken, function(err, profile) {
+
+        // An email is always required from Facebook login
         if (!profile.email) {
+          res.status(422).json({ message: 'Facebook login requires your email.' });
           return;
         }
 
