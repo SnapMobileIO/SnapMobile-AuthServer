@@ -1,6 +1,8 @@
 'use strict';
 
-import { Router } from 'express';
+import {
+  Router
+} from 'express';
 import passport from 'passport';
 import * as localPassport from './passport';
 
@@ -15,19 +17,23 @@ const router = new Router();
 function setUser(_user) {
   auth.setUser(_user);
   localPassport.setup(_user);
-  router.post('/', function(req, res, next) {
-    passport.authenticate('local', function(err, user, info) {
+  router.post('/', function (req, res, next) {
+    passport.authenticate('local', function (err, user, info) {
       let error = err || info;
       if (error) {
         return res.status(422).json(error);
       }
 
       if (!user) {
-        return res.status(404).json({ message: 'Something went wrong, please try again.' });
+        return res.status(404).json({
+          message: 'Something went wrong, please try again.'
+        });
       }
 
       let token = auth.signToken(user._id);
-      res.json({ token });
+      res.json({
+        token
+      });
     })(req, res, next);
   });
 }

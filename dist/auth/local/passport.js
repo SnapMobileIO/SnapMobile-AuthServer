@@ -18,18 +18,30 @@ function setup(User) {
     usernameField: 'email',
     passwordField: 'password'
   }, function (email, password, done) {
-    User.findOne({ email: email.toLowerCase() }).then(function (user) {
+    User.findOne({
+      email: email.toLowerCase()
+    }).then(function (user) {
       if (!user) {
-        return done(null, false, { message: 'This email is not registered.' });
+        return done(null, false, {
+          message: 'This email is not registered.'
+        });
       }
-
+      if (!user.password) {
+        return done(null, false, {
+          message: 'Password requirements have changed. Please reset your password.'
+        });
+      }
       user.authenticate(password, function (err, authenticated) {
         if (err) {
-          return done(null, false, { message: err.message });
+          return done(null, false, {
+            message: err.message
+          });
         }
 
         if (!authenticated) {
-          return done(null, false, { message: 'This password is not correct.' });
+          return done(null, false, {
+            message: 'This password is not correct.'
+          });
         }
 
         return done(null, user);
