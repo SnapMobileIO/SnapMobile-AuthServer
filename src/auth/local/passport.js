@@ -12,7 +12,9 @@ export function setup(User) {
       User.findOne({ email: email.toLowerCase() })
       .then(user => {
         if (!user) { return done(null, false, { message: 'This email is not registered.' }); }
-
+        if (!user.password) {
+          return done(null, false, { message: 'Password requirements have changed. Please reset your password.'});
+        };
         user.authenticate(password, (err, authenticated) => {
           if (err) {
             return done(null, false, { message: err.message });
